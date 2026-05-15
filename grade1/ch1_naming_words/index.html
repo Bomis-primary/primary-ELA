@@ -1,1 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Naming Words Sorting Game</title>
 
+  <style>
+
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      font-family:'Comic Sans MS', cursive, sans-serif;
+    }
+
+    body{
+      background:linear-gradient(135deg,#87CEFA,#FFD6EC,#FFF8B5);
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      overflow-x:hidden;
+      padding:20px;
+    }
+
+    .container{
+      width:100%;
+      max-width:1000px;
+      background:white;
+      border-radius:25px;
+      padding:20px;
+      text-align:center;
+      box-shadow:0 10px 30px rgba(0,0,0,0.2);
+      position:relative;
+    }
+
+    h1{
+      color:#ff4081;
+      margin-bottom:10px;
+      font-size:2rem;
+    }
+
+    .instruction{
+      color:#444;
+      margin-bottom:20px;
+      font-size:1.1rem;
+    }
+
+    .progress{
+      margin-bottom:20px;
+      font-weight:bold;
+      color:#555;
+    }
+
+    .word-card{
+      width:220px;
+      margin:20px auto;
+      padding:25px;
+      border-radius:20px;
+      background:#fff5fa;
+      border:4px dashed #ff80ab;
+      font-size:2rem;
+      font-weight:bold;
+      cursor:grab;
+      user-select:none;
+      box-shadow:0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .categories{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+      gap:15px;
+      margin-top:20px;
+    }
+
+    .drop-zone{
+      min-height:120px;
+      padding:25px 10px;
+      border-radius:20px;
+      color:white;
+      font-size:1.2rem;
+      font-weight:bold;
+      transition:0.3s;
+    }
+
+    .drop-zone.hover{
+      transform:scale(1.05);
+    }
+
+    .name{
+      background:#ff6b6b;
+    }
+
+    .place{
+      background:#4dabf7;
+    }
+
+    .animal{
+      background:#51cf66;
+    }
+
+    .thing{
+      background:#f59f00;
+    }
+
+    #message{
+      margin-top:20px;
+      font-size:1.5rem;
+      min-height:40px;
+      font-weight:bold;
+    }
+
+    .correct{
+      color:green;
+    }
+
+    .wrong{
+      color:red;
+    }
+
+    #restartBtn{
+      display:none;
+      margin-top:30px;
+      padding:15px 25px;
+      border:none;
+      border-radius:15px;
+      background:#ff4081;
+      color:white;
+      font-size:1.2rem;
+      cursor:pointer;
+    }
+
+    #restartBtn:hover{
+      background:#e91e63;
+    }
+
+    .volume-container{
+      margin-top:20px;
+      font-size:1rem;
+    }
+
+    input[type="range"]{
+      width:200px;
+    }
+
+    /* SPLASH SCREEN */
+
+    #splashScreen{
+      position:fixed;
+      inset:0;
+      background:white;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      z-index:99999;
+      transition:opacity 1s ease;
+    }
+
+    #logo{
+      width:320px;
+      max-width:80%;
+    }
+
+    /* CONFETTI */
+
+    .confetti{
+      position:fixed;
+      width:10px;
+      height:10px;
+      top:-10px;
+      z-index:9999;
+      animation:fall linear forwards;
+    }
+
+    @keyframes fall{
+      to{
+        transform:translateY(100vh) rotate(720deg);
+        opacity:0;
+      }
+    }
+
+    @media(max-width:600px){
+
+      h1{
+        font-size:1.6rem;
+      }
+
+      .word-card{
+        width:180px;
+        font-size:1.5rem;
+      }
+
+      .drop-zone{
+        font-size:1rem;
+      }
+
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <!-- SPLASH SCREEN -->
+
+  <div id="splashScreen">
+
+    <img 
+      id="logo"
+      src="https://raw.githubusercontent.com/Bomis-primary/primary-ELA/main/grade1/ch1_naming_words/assets/innovine-logo.png"
+      alt="Innovine Logo"
+    >
+
+  </div>
+
+  <!-- GAME CONTAINER -->
+
+  <div class="container">
+
+    <h1>🎈 Naming Words Sorting Game 🎈</h1>
+
+    <p class="instruction">
+      Drag the word into the correct box!
+    </p>
+
+    <div class="progress" id="progress"></div>
+
+    <div 
+      class="word-card" 
+      id="wordCard" 
+      draggable="true">
+    </div>
+
+    <div class="categories">
+
+      <div class="drop-zone name" data-category="name">
+        👦 Name
+      </div>
+
+      <div class="drop-zone place" data-category="place">
+        🏠 Place
+      </div>
+
+      <div class="drop-zone animal" data-category="animal">
+        🐶 Animal
+      </div>
+
+      <div class="drop-zone thing" data-category="thing">
+        📚 Thing
+      </div>
+
+    </div>
+
+    <div id="message"></div>
+
+    <div class="volume-container">
+      🔊 Volume:
+      <input 
+        type="range" 
+        id="volumeSlider" 
+        min="0" 
+        max="1" 
+        step="0.1" 
+        value="1"
+      >
+    </div>
+
+    <button id="restartBtn">
+      🔄 Restart Game
+    </button>
+
+  </div>
+
+  <script>
+
+    // SPLASH SCREEN
+
+    window.addEventListener("load", () => {
+
+      setTimeout(() => {
+
+        const splash = document.getElementById("splashScreen");
+
+        splash.style.opacity = "0";
+
+        setTimeout(() => {
+
+          splash.style.display = "none";
+
+        }, 1000);
+
+      }, 5000);
+
+    });
+
+    // QUESTIONS
+
+    const questions = [
+
+      {word:"Riya",category:"name"},
+      {word:"Rahul",category:"name"},
+      {word:"Kabir",category:"name"},
+      {word:"Anaya",category:"name"},
+
+      {word:"Mumbai",category:"place"},
+      {word:"School",category:"place"},
+      {word:"Park",category:"place"},
+      {word:"Zoo",category:"place"},
+
+      {word:"Tiger",category:"animal"},
+      {word:"Lion",category:"animal"},
+      {word:"Dog",category:"animal"},
+      {word:"Elephant",category:"animal"},
+
+      {word:"Book",category:"thing"},
+      {word:"Chair",category:"thing"},
+      {word:"Pencil",category:"thing"}
+
+    ];
+
+    let currentQuestion = 0;
+    let shuffledQuestions = [];
+
+    const wordCard = document.getElementById("wordCard");
+    const progress = document.getElementById("progress");
+    const message = document.getElementById("message");
+    const restartBtn = document.getElementById("restartBtn");
+    const volumeSlider = document.getElementById("volumeSlider");
+
+    // SOUND
+
+    const correctSound = new Audio(
+      "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=correct-2-46134.mp3"
+    );
+
+    const wrongSound = new Audio(
+      "https://cdn.pixabay.com/download/audio/2022/03/15/audio_4c2d09f5c4.mp3?filename=wrong-answer-126515.mp3"
+    );
+
+    function setVolume(){
+
+      correctSound.volume = volumeSlider.value;
+      wrongSound.volume = volumeSlider.value;
+
+    }
+
+    volumeSlider.addEventListener("input",setVolume);
+
+    setVolume();
+
+    // SHUFFLE
+
+    function shuffle(array){
+
+      return array.sort(() => Math.random() - 0.5);
+
+    }
+
+    // LOAD GAME
+
+    function loadGame(){
+
+      shuffledQuestions = shuffle([...questions]).slice(0,12);
+
+      currentQuestion = 0;
+
+      restartBtn.style.display = "none";
+
+      wordCard.style.display = "block";
+
+      loadQuestion();
+
+    }
+
+    function loadQuestion(){
+
+      if(currentQuestion >= shuffledQuestions.length){
+
+        endGame();
+        return;
+
+      }
+
+      const q = shuffledQuestions[currentQuestion];
+
+      wordCard.textContent = q.word;
+
+      progress.textContent =
+      `Question ${currentQuestion + 1} of ${shuffledQuestions.length}`;
+
+      message.textContent = "";
+      message.className = "";
+
+    }
+
+    // DRAG
+
+    wordCard.addEventListener("dragstart",(e)=>{
+
+      e.dataTransfer.setData(
+        "category",
+        shuffledQuestions[currentQuestion].category
+      );
+
+    });
+
+    // DROP ZONES
+
+    const dropZones = document.querySelectorAll(".drop-zone");
+
+    dropZones.forEach(zone=>{
+
+      zone.addEventListener("dragover",(e)=>{
+
+        e.preventDefault();
+        zone.classList.add("hover");
+
+      });
+
+      zone.addEventListener("dragleave",()=>{
+
+        zone.classList.remove("hover");
+
+      });
+
+      zone.addEventListener("drop",(e)=>{
+
+        e.preventDefault();
+
+        zone.classList.remove("hover");
+
+        const correctCategory =
+        e.dataTransfer.getData("category");
+
+        const selectedCategory =
+        zone.dataset.category;
+
+        if(correctCategory === selectedCategory){
+
+          correctSound.currentTime = 0;
+          correctSound.play();
+
+          message.textContent = "🎉 Correct!";
+          message.className = "correct";
+
+          createConfetti();
+
+        }else{
+
+          wrongSound.currentTime = 0;
+          wrongSound.play();
+
+          message.textContent = "❌ Oops! Try Again!";
+          message.className = "wrong";
+
+        }
+
+        setTimeout(()=>{
+
+          currentQuestion++;
+          loadQuestion();
+
+        },1200);
+
+      });
+
+    });
+
+    // CONFETTI
+
+    function createConfetti(){
+
+      for(let i=0;i<80;i++){
+
+        const confetti = document.createElement("div");
+
+        confetti.classList.add("confetti");
+
+        confetti.style.left =
+        Math.random() * 100 + "vw";
+
+        confetti.style.background =
+        `hsl(${Math.random()*360},100%,50%)`;
+
+        confetti.style.animationDuration =
+        (Math.random()*3 + 2) + "s";
+
+        confetti.style.width =
+        confetti.style.height =
+        Math.random()*8 + 5 + "px";
+
+        document.body.appendChild(confetti);
+
+        setTimeout(()=>{
+
+          confetti.remove();
+
+        },5000);
+
+      }
+
+    }
+
+    // END GAME
+
+    function endGame(){
+
+      wordCard.style.display = "none";
+
+      progress.textContent = "";
+
+      message.innerHTML =
+      "🏆 Amazing! You completed the game!";
+
+      message.className = "correct";
+
+      restartBtn.style.display = "inline-block";
+
+    }
+
+    // RESTART
+
+    restartBtn.addEventListener("click",()=>{
+
+      loadGame();
+
+    });
+
+    // START GAME
+
+    loadGame();
+
+  </script>
+
+</body>
+</html>
